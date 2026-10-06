@@ -18,7 +18,8 @@ dist/
 !.env.example
 /data/
 /artifacts/
-/logs/
+/logs/*
+!/logs/.gitkeep
 
 # Editors and OS
 .DS_Store

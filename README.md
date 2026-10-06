@@ -22,7 +22,7 @@
 
 - Python 3.12.11
 - uv 管理虚拟环境及依赖，提交 `uv.lock` 保证依赖版本可复现。
-- 基础依赖：FastAPI、Uvicorn。
+- 基础依赖：FastAPI、Uvicorn、concurrent-log-handler（协调日志文件写入）。
 - 开发依赖：pytest、HTTPX、Ruff；后续按实际需要添加其他依赖。
 
 ```sh
@@ -64,9 +64,16 @@ Postman 请求保存在 `postman/`，项目关联配置保存在 `.postman/`。
 在 Postman 的项目本地视图中选择 `local` 环境，再发送 `00-健康检查` 下的 `health` 请求。
 环境变量 `url` 默认指向 `http://127.0.0.1:8080`；改端口时须与服务启动命令保持一致。
 
+## 日志
+
+日志统一配置在 `config/logging.ini`，同时输出到控制台与 `logs/service.log`，包含线程名称和线程 ID。
+各模块使用 `from common.logger import logger`；首次导入自动初始化，启动服务无需 `--log-config`。
+单个文件上限 10 MiB，保留 10 个编号备份；实际日志不提交 Git，详见 [日志说明](docs/offline/api/05-logging.md)。
+
 ## 目录
 
 - `src/api/`：FastAPI 应用入口与 HTTP 路由；源码直接按功能组织。
+- `src/common/`：共用日志模块。
 - `tests/`：占位，后续按需要补充验证。
 - `docs/offline/`：离线文档处理设计草案。
 - `docs/online/`：在线检索阶段边界，待详细设计。

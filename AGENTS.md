@@ -4,6 +4,9 @@
 
 首批 PDF 解析的 01～06 需求与用例文档已评审通过；原解析实现与测试已按用户要求删除，准备根据文档分步重写。
 已实现 FastAPI 应用入口与 GET /health，完成启动和实际 HTTP 调用验证；尚无 PDF 上传或解析接口。
+已实现 logging 统一配置，控制台与本地 logs/service.log 同步输出，保留 10 个编号备份并记录线程信息。
+文件处理器使用 concurrent-log-handler 协调本机多进程写入；业务运行信息使用日志，不使用 print。
+各模块通过 from common.logger import logger 导入共用实例，首次导入自动初始化，不在各文件重复配置。
 产物版本存储、Runner、其他 Stage 及新增需求继续分批讨论。
 
 ## 环境与命令

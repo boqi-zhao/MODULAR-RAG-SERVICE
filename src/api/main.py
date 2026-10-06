@@ -2,8 +2,11 @@
 
 from fastapi import FastAPI
 
+from common.logger import logger
+
 # Uvicorn 加载这个应用对象；FastAPI 用它登记和分发 HTTP 请求。
 app = FastAPI(title="MODULAR-RAG-SERVICE")
+logger.info("FastAPI application initialized")
 
 
 # 将 GET /health 绑定到下面的函数，返回的字典会自动转换为 JSON。
