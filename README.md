@@ -2,22 +2,27 @@
 
 新建的独立 RAG 服务项目，计划采用 FastAPI，并支持阶段产物落盘、子阶段独立重跑和版本化测评。
 
-当前仅完成项目初始化；尚未实现应用入口、HTTP 路由或业务逻辑。
+原 PDF 解析代码与测试已按用户要求删除，准备根据文档分步重写；当前没有业务代码、ASGI 入口或 HTTP 路由。
 
-已补充离线文档处理的设计草案，尚待评审；设计按离线文档处理、在线检索、评测三个阶段组织。
+设计按离线文档处理、在线检索、评测三个阶段组织；首批解析用例已通过，其余范围分批评审。
 入口见 [设计文档](docs/README.md)，术语见 [GLOSSARY.md](GLOSSARY.md)。
-另有 [离线技术选型说明](docs/offline/technology-options.md)，记录候选方案、取舍与验证场景。
+另有 [离线技术选型说明](docs/offline/03-technology-options.md)，记录候选方案、取舍与验证场景。
 已确定 PostgreSQL 为状态库，要求至少 10 用户同时使用，内部文档处理并发由服务配置。
-口径见 [并发与批次进度设计](docs/offline/concurrency.md)；尚未安装数据库或实现并发能力。
-当前实现规划仅覆盖 PDF；Markdown 和 QA 对 CSV 为后续需求，扩展边界见 [离线设计](docs/offline/design.md#32-格式扩展边界)。
-采用 [TDD 与评审流程](docs/offline/tdd-plan.md)：先分批评审用例和输入输出，通过后先写测试再实现。
+口径见 [并发与批次进度设计](docs/offline/04-concurrency.md)；尚未安装数据库或实现并发能力。
+当前实现规划仅覆盖 PDF；Markdown 和 QA 对 CSV 为后续需求，扩展边界见 [离线设计](docs/offline/design/04-formats.md)。
+首批 PDF 已选方案 B：文本定位与嵌入图片提取；OCR、结构化表格和复杂版面留待后续。
+解析库已选 PyMuPDF，定位到页码和文本块/图片矩形区域；重写时再添加依赖并锁定版本。
+采用 [分步开发与讲解流程](docs/offline/01-development-flow.md)：先解释逻辑，用户指示开始后每次实现一个小步骤；不采用 TDD。
+已准备 20 页 DocLayNet PDF/JSON 和 9 份控制 PDF；[首批 parse 需求与用例](docs/offline/reviews/01-pdf-parse-cases.md) 已评审通过，保留为重写依据。
+后续安排见 [解析重写计划](docs/offline/05-pdf-parse-plan.md)，当前状态见 [实现状态](docs/offline/reviews/pdf-parse/09-implementation-status.md)。
+当前先推进 parse，chunk 暂缓；业务 PDF 由用户后续补充，解析回归不等于网管告警业务效果评测。
 
 ## 开发环境
 
 - Python 3.12.11
 - uv 管理虚拟环境及依赖，提交 `uv.lock` 保证依赖版本可复现。
 - 基础依赖：FastAPI、Uvicorn。
-- 开发依赖：pytest、HTTPX、Ruff。
+- 开发依赖：pytest、HTTPX、Ruff；后续按实际需要添加其他依赖。
 
 ```sh
 cd '/Users/zhaoboqi/project/MODULAR-RAG-SERVICE'
@@ -33,13 +38,14 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-添加测试后使用 `uv run pytest`；当前空测试目录执行 pytest 会提示没有测试。
-尚无 ASGI 应用，因此当前没有服务启动命令。
+当前没有自动测试；运行 `uv run pytest` 会提示未收集到测试，不能视为验证通过。
+公开样本与已生成控制 PDF 保留在忽略的 `data/` 下；原生成脚本已删除。
+尚无 ASGI 应用，因此当前没有服务启动命令；外部调用接口需要单独设计和实现。
 
 ## 目录
 
-- `src/modular_rag_service/`：预留源码目录。
-- `tests/`：预留测试目录。
+- `src/`：待分步实现，源码直接按功能组织，不额外套项目名称目录。
+- `tests/`：占位，后续按需要补充验证。
 - `docs/offline/`：离线文档处理设计草案。
 - `docs/online/`：在线检索阶段边界，待详细设计。
 - `docs/evaluation/`：评测阶段边界，待详细设计。

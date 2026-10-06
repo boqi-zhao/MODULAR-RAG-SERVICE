@@ -19,4 +19,4 @@
 - [解析库选择背景](pdf-parse/08-parser-choice.md)：PyMuPDF 与旧项目组合的取舍。
 
 20 页公开样本质量已获认可；业务 PDF 暂不补，由用户后续补充。
-首批 01～06 已全部通过；解析模块与测试已实现，56 个测试通过，详见 [测试记录](pdf-parse/09-test-results.md)。
+首批 01～06 的需求与用例已评审通过；原实现已删除，按用户要求取消 TDD，准备分步重写，详见 [实现状态](pdf-parse/09-implementation-status.md)。

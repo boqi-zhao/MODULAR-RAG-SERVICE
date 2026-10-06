@@ -2,7 +2,7 @@
 
 ## 已确认的解析方案与定位粒度
 
-已使用 PyMuPDF 1.28.2 实现统一文本与图片提取，依赖由 uv.lock 固定；首批 56 个测试通过，见 [测试记录](09-test-results.md)。
+已选择 PyMuPDF 统一提取文本与图片；原实现和新增依赖已移除，重写时再安装并锁定版本，见 [实现状态](09-implementation-status.md)。
 
 | 方案 | 可参考的既有经验 | 新项目的额外工作与取舍 |
 | --- | --- | --- |
@@ -20,5 +20,5 @@ parse 记录客观图文位置，不直接推断“这张图片属于哪段语�
 
 定位验收按 [坐标约定](02-coordinates.md) 执行：指定文字核对页码与大致区域，控制图片四条边各允许最多 1 point 误差。
 
-图片提取使用字典中的每次出现记录，并组合透明遮罩；部分裁剪图片通过不限制提取范围后检查页面内位置处理，依据 [图片块说明](https://pymupdf.readthedocs.io/en/latest/textpage.html#block-dictionaries) 和 [提取范围说明](https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_text)。
-具体输入输出与坐标见 [已通过的用例入口](../01-pdf-parse-cases.md)，调用见 [使用说明](../../05-pdf-parse-usage.md)。
+图片提取可参考字典中的出现记录、透明遮罩，以及跨裁剪边界图片的处理方式；具体写法在对应步骤讲解和确认，依据 [图片块说明](https://pymupdf.readthedocs.io/en/latest/textpage.html#block-dictionaries) 和 [提取范围说明](https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_text)。
+具体输入输出与坐标见 [已通过的用例入口](../01-pdf-parse-cases.md)，后续安排见 [解析计划](../../05-pdf-parse-plan.md)。
