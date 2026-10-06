@@ -1,7 +1,7 @@
 # ORM 与数据库表迁移
 
 状态：SQLAlchemy + Alembic 接入设计已评审通过。
-已实现 [ORM 基础](08-orm-foundation.md)、上传模型、首次迁移与空白约束修正迁移；记录读写尚未实现。
+已实现 [ORM 基础](08-orm-foundation.md)、上传模型、首次迁移与空白约束修正迁移；[记录读写](03-upload-records.md) 已实现且通过 agent 复查及用户评审。
 
 ## 三个组件各做什么
 
@@ -60,10 +60,10 @@ SQLAlchemy 与 Alembic 通过 uv 添加并锁定实际版本；本步不引入�
 
 1. ORM 基础：安装依赖，配置基类、连接引擎和 Session，验证真实 PG 连接。
 2. 上传模型与首次迁移：表设计通过后定义模型，接入 Alembic，检查并验证建表和约束（已完成，模型见 `src/db/models/document_upload.py`）。
-3. 上传记录读写：实现创建、成功和失败更新，验证事务及并发结束同一记录的行为。
+3. 上传记录读写：创建、成功和失败更新已实现，事务回滚及并发结束只成功一次已通过真实 PG 验证。
 4. 文件保存与上传接口：后续分别实现，再串联完整上传流程。
 
-每一步单独讲解和验收；当前文档不代表上述步骤已实现。
+前 3 步已实现并验证；第 4 步尚未实现，继续单独讲解和验收。
 依据：[SQLAlchemy ORM 入门](https://docs.sqlalchemy.org/en/20/orm/quickstart.html)、
 [Session 与并发](https://docs.sqlalchemy.org/en/20/orm/session_basics.html)、
 [Alembic 迁移入门](https://alembic.sqlalchemy.org/en/latest/tutorial.html)、

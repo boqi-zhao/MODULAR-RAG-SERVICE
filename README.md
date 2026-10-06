@@ -5,11 +5,13 @@
 原 PDF 解析代码与测试已按用户要求删除，准备根据文档分步重写。
 当前已实现 FastAPI 应用入口和 `GET /health`；PDF 上传与解析接口尚未实现。
 
+开发接手请先阅读 [协作约定](AGENTS.md) 和 [任务进度与下一步](TASKS.md)，再查看相关设计与代码。
+
 设计按离线文档处理、在线检索、评测三个阶段组织；首批解析用例已通过，其余范围分批评审。
 入口见 [设计文档](docs/README.md)，术语见 [GLOSSARY.md](GLOSSARY.md)。
 另有 [离线技术选型说明](docs/offline/03-technology-options.md)，记录候选方案、取舍与验证场景。
 已确定 PostgreSQL 为状态库，要求至少 10 用户同时使用，内部文档处理并发由服务配置。
-口径见 [并发与批次进度设计](docs/offline/04-concurrency.md)；尚未安装数据库或实现并发能力。
+口径见 [并发与批次进度设计](docs/offline/04-concurrency.md)；本地 Docker PG 与 Python 连接已验证，尚未实现并发调度。
 当前实现规划仅覆盖 PDF；Markdown 和 QA 对 CSV 为后续需求，扩展边界见 [离线设计](docs/offline/design/04-formats.md)。
 首批 PDF 已选方案 B：文本定位与嵌入图片提取；OCR、结构化表格和复杂版面留待后续。
 解析库已选 PyMuPDF，定位到页码和文本块/图片矩形区域；重写时再添加依赖并锁定版本。
@@ -22,7 +24,8 @@
 
 - Python 3.12.11
 - uv 管理虚拟环境及依赖，提交 `uv.lock` 保证依赖版本可复现。
-- 基础依赖：FastAPI、Uvicorn、concurrent-log-handler（协调日志文件写入）。
+- 基础依赖：FastAPI、Uvicorn、Psycopg（PostgreSQL 驱动）、concurrent-log-handler（协调日志文件写入）。
+- 数据库工程化：SQLAlchemy ORM、Alembic；ORM 基础、上传记录表、两个迁移及记录读写已实现。
 - 开发依赖：pytest、HTTPX、Ruff；后续按实际需要添加其他依赖。
 
 ```sh
@@ -39,7 +42,8 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-当前没有自动测试；运行 `uv run pytest` 会提示未收集到测试，不能视为验证通过。
+已有上传表迁移/约束与记录读写测试（46 个），使用真实 PG：`uv run --env-file .env pytest -q`。
+未提供数据库配置时测试会跳过；原 PDF 解析测试尚未重写。
 公开样本与已生成控制 PDF 保留在忽略的 `data/` 下；原生成脚本已删除。
 
 ## 启动与调用
@@ -64,6 +68,25 @@ Postman 请求保存在 `postman/`，项目关联配置保存在 `.postman/`。
 在 Postman 的项目本地视图中选择 `local` 环境，再发送 `00-健康检查` 下的 `health` 请求。
 环境变量 `url` 默认指向 `http://127.0.0.1:8080`；改端口时须与服务启动命令保持一致。
 
+## 本地 PostgreSQL
+
+当前已实现驱动连接、ORM 基础、上传记录表、两个迁移及记录读写；本地文件保存和上传接口尚未实现。
+本机 `.env` 已创建且不提交 Git；其他机器首次使用时从 `.env.example` 复制配置。
+先启动 Docker Desktop，再在项目根目录运行：
+
+```sh
+docker compose up -d --wait postgres
+uv run --env-file .env python src/check_database.py
+uv run --env-file .env python src/check_orm_database.py
+uv run --env-file .env alembic upgrade head  # 建表或升级结构，重复执行安全
+uv run --env-file .env alembic current       # 查看数据库当前迁移版本
+```
+
+成功时输出 INFO 日志：`PostgreSQL connection successful: modular_rag`。
+ORM 检查输出 `ORM connection successful: modular_rag`，代码与事务用法见 [ORM 基础](docs/offline/api/08-orm-foundation.md)。
+数据库端口为 `127.0.0.1:5432`，数据保存在 Docker 数据卷中。
+停止命令：`docker compose stop postgres`；详细配置与代码逻辑见 [PG 接入说明](docs/offline/api/04-postgresql-connection.md)。
+
 ## 日志
 
 日志统一配置在 `config/logging.ini`，同时输出到控制台与 `logs/service.log`，包含线程名称和线程 ID。
@@ -73,8 +96,13 @@ Postman 请求保存在 `postman/`，项目关联配置保存在 `.postman/`。
 ## 目录
 
 - `src/api/`：FastAPI 应用入口与 HTTP 路由；源码直接按功能组织。
+- `src/db/`：PostgreSQL 连接、ORM 基类、Session、上传记录模型与读写模块。
+- `migrations/`：Alembic 迁移脚本；创建 `document_uploads` 表及升级空白约束。
+- `alembic.ini`：迁移工具配置；连接地址从环境变量读取，不写密码。
 - `src/common/`：共用日志模块。
-- `tests/`：占位，后续按需要补充验证。
+- `src/check_database.py`：独立数据库连接检查入口。
+- `src/check_orm_database.py`：独立 ORM 连接检查入口。
+- `tests/`：ORM 基础、上传表迁移、约束及记录读写的真实 PG 验证；PDF 测试尚未重写。
 - `docs/offline/`：离线文档处理设计草案。
 - `docs/online/`：在线检索阶段边界，待详细设计。
 - `docs/evaluation/`：评测阶段边界，待详细设计。

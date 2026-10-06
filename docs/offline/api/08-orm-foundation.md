@@ -1,6 +1,6 @@
 # ORM 基础实现
 
-状态：已实现并通过真实 PG 验证，等待代码评审；上传模型与首次迁移已实现，见 [上传表设计](06-upload-table.md)。
+状态：ORM 基础已实现、通过真实 PG 验证并提交；上传模型与两个迁移已实现，见 [上传表设计](06-upload-table.md)。
 
 ## 三个入口怎么用
 
@@ -12,7 +12,7 @@
 
 原始驱动和 ORM 共用 `src/db/connection.py` 的配置读取入口。
 导入 `db.session` 前要加载 `DATABASE_URL`；导入只配置引擎，不查询数据库、不建表。
-已锁定 SQLAlchemy 2.1.3、Alembic 1.20.0；Alembic 目前只是安装，配置留到下一步。
+已锁定 SQLAlchemy 2.1.3、Alembic 1.20.0；Alembic 配置及两个迁移已实现。
 
 ## Session 怎样提交和回滚
 
@@ -29,7 +29,7 @@ with SessionFactory.begin() as session:
 
 每次数据库操作使用自己的 Session；不同请求和线程不能共用它。
 接收 PDF 前先完成创建记录的事务，文件接收完成后再开另一个事务更新结果。
-本步还未实现这两段上传业务操作，以上代码只展示连接与事务用法。
+这两段记录操作已在 `src/db/upload_records.py` 实现；以上代码只展示连接与事务用法，本地文件保存仍待实现。
 服务引擎持续复用；独立检查脚本退出前调用 `engine.dispose()`，释放连接池。
 
 ## 当前连接池设置
@@ -59,4 +59,4 @@ uv run ruff format --check .
 - URL 转换保留编码密码中的特殊字符；导入引擎时未建立实际连接。
 - 未加载 `DATABASE_URL` 时，这 2 个 PG 测试会跳过；跳过不代表真实数据库验证通过。
 
-设计依据见 [ORM 与迁移方案](07-orm-migrations.md)；下一步是上传模型与首次迁移。
+设计依据见 [ORM 与迁移方案](07-orm-migrations.md)；记录读写已通过 agent 复查，下一小步是本地文件保存（T-09）。
