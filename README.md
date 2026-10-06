@@ -102,7 +102,7 @@ ORM 检查输出 `ORM connection successful: modular_rag`，代码与事务用�
 
 - `src/api/`：FastAPI 应用入口与上传路由。
 - `src/db/`：PostgreSQL 连接、ORM 基类、Session、上传记录模型与读写模块。
-- `src/uploads/`：本地文件保存（分段写入、校验和、大小限制与临时文件发布）。
+- `src/uploads/`：`service.py` 编排上传业务；`files.py` 负责本地文件保存与校验。
 - `migrations/`：Alembic 迁移脚本；创建 `document_uploads` 表及升级空白约束。
 - `alembic.ini`：迁移工具配置；连接地址从环境变量读取，不写密码。
 - `Makefile`：常用命令快捷方式（`make api/db/migrate/test/lint`）。

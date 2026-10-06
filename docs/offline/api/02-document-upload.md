@@ -81,7 +81,10 @@
 验证真实 PDF 上传后，保存字节与输入一致，PG 有对应记录；再次上传不会覆盖第一次。
 一份请求多份时，成功与失败混合也要分别核对：成功的文件和记录保留，失败的不留正式文件。
 失败记录或未完成记录不能用于提交解析；文件与数据库的异常情况见 [上传记录](03-upload-records.md)。
-上传路由负责接收和响应，本地保存逻辑放在独立模块；分文件后逐段讲解，并补充 Postman 请求。
+上传路由 `src/api/documents.py` 只接收请求、转换输入和返回 HTTP 响应。
+`src/uploads/service.py` 负责批次限制、逐份处理、调用文件保存和记录读写、统计结果；不依赖 FastAPI。
+service 接收 `UploadInput`（文件名、文件流、大小），返回 `UploadBatchResult`；整批超限抛出业务异常，由路由映射为 413。
+`src/uploads/files.py` 负责本地文件保存，`src/db/upload_records.py` 负责数据库读写。
 
 ## TODO：存储桶
 
