@@ -1,11 +1,13 @@
-"""FastAPI 应用入口与首个健康检查端点。"""
+"""FastAPI 应用入口与 HTTP 路由注册。"""
 
 from fastapi import FastAPI
 
+from api.documents import router as documents_router
 from common.logger import logger
 
 # Uvicorn 加载这个应用对象；FastAPI 用它登记和分发 HTTP 请求。
 app = FastAPI(title="MODULAR-RAG-SERVICE")
+app.include_router(documents_router)
 logger.info("FastAPI application initialized")
 
 

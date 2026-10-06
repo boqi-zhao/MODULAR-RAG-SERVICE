@@ -7,8 +7,8 @@
 ## 当前停在哪里
 
 - 当前推进离线 PDF 接入：上传文件 → 保存上传记录 → 提交后台解析；后续再做 chunk。
-- T-07 上传表模型与迁移已提交（`aa20f42`）；T-08 已实现、通过真实 PG 测试及 agent 复查，用户已评审通过；代码、测试与文档随本次提交保存。
-- 上传接口、上传记录表、ORM 与迁移方案已评审通过；下一小步是本地文件保存（T-09），需用户明确指示后开始。
+- T-07 提交为 `aa20f42`，T-08 提交为 `6971d95`；T-09/T-10 已实现、验证及用户评审通过，代码、测试和相关文档包含在本文件所在的提交中。
+- 上传接口、上传记录表、ORM 与迁移方案已评审通过；T-09/T-10 完成后，下一步待评审的是 PDF 解析模块重写（T-11）。
 - 用户要求一次只实现一个能讲清楚的小步骤，完成后展示代码和验证结果，再由用户决定下一步。
 - 当前不采用 TDD；此前整套 PDF 解析实现与测试已按用户要求删除，不能从历史描述认定仍可用。
 
@@ -24,25 +24,24 @@
 | T-06 | 2 个真实 PG 测试：提交/回滚、Session 独立及连接归还 | [测试文件](tests/test_orm_database.py) |
 | T-07 | 上传记录表 ORM 模型、Alembic 配置与首次迁移 | [模型](src/db/models/document_upload.py)、[首次迁移](migrations/versions/e5690f23be74_create_document_uploads.py)、[空白约束修正](migrations/versions/608bbe966e57_fix_not_blank_constraints.py) |
 | T-08 | 上传记录读写：短事务创建 uploading，条件更新为 uploaded/failed | [代码](src/db/upload_records.py)、[测试](tests/test_upload_records.py)、[记录方案](docs/offline/api/03-upload-records.md) |
+| T-09 | 本地文件保存：分段写入、大小限制、SHA-256、独立临时文件发布（拒绝覆盖）与失败清理 | [代码](src/uploads/files.py)、[测试](tests/test_upload_files.py) |
+| T-10 | `POST /documents` 多份上传：`files` 字段、逐份结果、份数与总大小限额 | [路由](src/api/documents.py)、[接口测试](tests/test_document_upload_api.py)、[Postman 请求](postman/collections/01-上传文档/upload.request.yaml) |
 
-T-05/T-06/T-07 的实现和验证已完成并提交；T-08 记录读写已实现、验证并由用户评审通过，代码与文档随本次提交保存。
+T-05～T-10 已提交；T-09/T-10 的实现、验证与用户评审均已通过。
+2026-10-06 修复后复查通过：65 个测试无跳过，Ruff、格式及 diff 检查通过。独立临时文件与硬链接发布已解决顺序/并发覆盖问题；按上次出错的交错顺序补验，第一份成功、第二份拒绝覆盖，原始字节保持不变且临时文件清理完成。本轮未发现新的阻塞问题，agent review 通过，用户已同意提交。此前一次上传 3 份同名不同内容文件，编号、真实 PG 记录和磁盘字节均已验证独立。
 Alembic 已配置，重复升级不重复建表。
-最近实际验证：46 个测试通过（含迁移往返、旧结构升级、约束矩阵、记录读写、失败回滚与并发结束只成功一次），Ruff 检查与格式检查通过；两个迁移在开发库和独立临时库实际执行。
-T-08 复查：加载 `.env` 时 46 个测试通过，无跳过；未配置 `DATABASE_URL` 时 1 个通过、39 个跳过，无收集错误。
+最近实际验证：65 个测试通过（含多份混合成功/失败、全失败 400、限额 413、数据库不可用 503、同编号重复保存拒绝覆盖与并发交错保护）；Ruff 检查与格式检查通过；另启动服务混合上传 4 份（2 份真实样本成功、错名与假头各 1 份失败），逐份结果与磁盘 SHA-256 一致，份数超限整单 413。
+T-08/T-09/T-10 复查：加载 `.env` 时 65 个测试通过，无跳过；未配置 `DATABASE_URL` 时 9 个通过、50 个跳过，无收集错误。
 上传读写测试在未配置数据库时按整个模块跳过，因此跳过计数不等于其中的用例数；跳过不代表 PG 验证通过。
 错误配置、连接不可达、密码不输出及导入不连接的检查已完成，详见 ORM 基础说明。
-这些结果不代表上传、PDF 解析或 10 用户端到端并发已经验证。
+这些结果不代表 PDF 解析或 10 用户端到端并发已经验证。
 
 ## 接下来按顺序实现
 
-T-08 已实现、验证并由用户评审通过；以下为后续待办。
-- [ ] T-09 本地文件保存：分段写入、大小限制、SHA-256、临时文件发布与请求内失败清理。
-  验收：原始字节一致、重复上传不覆盖；见 [上传设计](docs/offline/api/02-document-upload.md)。
-- [ ] T-10 `POST /documents` 串联记录与文件保存，补充 Postman 上传请求。
-  验收：只有文件和 PG 记录均完成才返回 201，覆盖设计中的失败响应；本步不启动解析。
+T-09/T-10 已完成并通过用户评审；下一步为 T-11，具体实现仍需用户明确指示。
 
 上述方案已通过需求评审；接手 agent 应先说明准备实现哪一个小步骤，再按用户指示推进。
-`document_uploads` 表、上传模型、`alembic.ini` 与 `migrations/` 已存在，记录读写见 `src/db/upload_records.py`；迁移命令见 README，不在 API 启动时自动迁移。
+`document_uploads` 表、上传模型、`alembic.ini` 与 `migrations/` 已存在；记录读写见 `src/db/upload_records.py`，文件保存见 `src/uploads/files.py`，接口见 `src/api/documents.py`；迁移命令见 README，不在 API 启动时自动迁移。
 
 ## 后续功能：尚未实现
 
@@ -72,23 +71,21 @@ Redis/Kafka 未选定；不要因为工业化目标直接引入。详细远期�
 ```sh
 git status --short --branch
 uv sync --locked
-docker compose up -d --wait postgres
+make db    # 启动 PostgreSQL 并升级结构
 uv run --env-file .env python src/check_orm_database.py
-uv run --env-file .env alembic upgrade head
-uv run --env-file .env pytest -q
-uv run ruff check .
-uv run ruff format --check .
+make test
+make lint
 ```
 
-未加载数据库配置时测试会跳过，不能认定 PG 验证通过。启动 API 和 Postman 操作见 README。
+未加载数据库配置时测试会跳过，不能认定 PG 验证通过。启动 API 和 Postman 操作见 README；常用命令见 Makefile（`make api` 自动准备数据库并启动服务）。
 本机保留 20 页 DocLayNet PDF/JSON 和 9 份控制 PDF，位于 `data/samples/`，不随 Git 克隆。
 `.env`、日志、PDF 样本及数据库数据卷均为本机资源；切换机器时需单独准备，不能复制旧项目凭据或运行数据。
 
 ## 提交与维护
 
-本次交接基线：`master`；T-07 提交为 `aa20f42`，T-08 与文档包含在本文件所在的提交中，具体编号用 `git log -1 --oneline` 查看。
-本次仅做本地 Git 提交，尚未推送；切换前以实际 Git 状态为准。
-切换账号并沿用当前目录可保留工作区；仅从远端克隆无法获得未提交文件，需先妥善保存这些改动。
+本次交接基线：`master`；T-07 为 `aa20f42`，T-08 为 `6971d95`，已推送远端。
+T-09/T-10 代码、测试、Postman 请求、Makefile、依赖与相关文档包含在本文件所在的提交中，编号用 `git log -1 --oneline` 查看；本次仅本地提交，尚未推送。
+切换账号并沿用当前目录可保留工作区；仅从远端克隆无法获得未推送提交，需先妥善保存。
 每步开发完成、需求变化、用户评审或提交后，同步更新本文件的状态、下一步、验证证据和提交基线。
 新任务使用新编号，保留既有编号；已验证结果不写成待办，尚未验证或只安装依赖的功能不标完成。
 本文件保持简短且不超过 200 行；功能细节放对应 docs 文档，历史过程交给 Git 记录。

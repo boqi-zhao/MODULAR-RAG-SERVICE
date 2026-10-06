@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{url}}/documents"
+method: POST
+order: 1791273320936
+body:
+  type: formdata
+  content:
+    - key: files
+      type: file
+      src: "data/samples/pdf-controls/01-multilingual.pdf"

@@ -3,9 +3,9 @@
 ## 当前范围
 
 首批 PDF 解析的 01～06 需求与用例文档已评审通过；原解析实现与测试已按用户要求删除，准备根据文档分步重写。
-已实现 FastAPI 应用入口与 GET /health，完成启动和实际 HTTP 调用验证；尚无 PDF 上传或解析接口。
+已实现 FastAPI 应用入口与 GET /health，完成启动和实际 HTTP 调用验证；PDF 上传见下述状态，解析接口尚未实现。
 上传接口与 PG 上传记录方案已评审通过；已接入本地 Docker PostgreSQL 并验证 Python 连接。
-上传表与 SQLAlchemy + Alembic 设计已通过；已实现 ORM 基础、上传模型、两个迁移及上传记录读写，并通过真实 PG 测试；本地文件保存和 POST 接口尚未实现。
+上传表、记录读写、本地文件保存与 POST /documents 接口已实现，并通过真实 PG、磁盘和 HTTP 验证；PDF 解析接口尚未实现。
 已实现 logging 统一配置，控制台与本地 logs/service.log 同步输出，保留 10 个编号备份并记录线程信息。
 文件处理器使用 concurrent-log-handler 协调本机多进程写入；业务运行信息使用日志，不使用 print。
 各模块通过 from common.logger import logger 导入共用实例，首次导入自动初始化，不在各文件重复配置。
@@ -16,7 +16,8 @@
 - 使用 Python 3.12 和 uv，依赖配置在 pyproject.toml，锁定文件为 uv.lock。
 - 新增依赖使用 uv add；开发依赖使用 uv add --dev。
 - 使用 uv run ruff check . 和 uv run ruff format --check . 验证代码。
-- 已有上传记录读写、迁移与约束的真实 PG 测试（46 个），使用 uv run --env-file .env pytest；未加载数据库配置时会跳过，不能当作验证通过。
+- 常用命令见 Makefile：make api（准备数据库并启动服务）、make db、make test、make lint。
+- 已有迁移、记录读写、文件保存与多份上传接口的真实 PG 测试（65 个），使用 uv run --env-file .env pytest；未加载数据库配置时会跳过，不能当作验证通过。
 
 ## 任务跟踪与交接
 

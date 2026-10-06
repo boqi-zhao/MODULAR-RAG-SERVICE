@@ -3,7 +3,7 @@
 新建的独立 RAG 服务项目，计划采用 FastAPI，并支持阶段产物落盘、子阶段独立重跑和版本化测评。
 
 原 PDF 解析代码与测试已按用户要求删除，准备根据文档分步重写。
-当前已实现 FastAPI 应用入口和 `GET /health`；PDF 上传与解析接口尚未实现。
+当前已实现 `GET /health` 与 `POST /documents` 上传接口（本地保存原文件 + PostgreSQL 上传记录）；PDF 解析接口尚未实现。
 
 开发接手请先阅读 [协作约定](AGENTS.md) 和 [任务进度与下一步](TASKS.md)，再查看相关设计与代码。
 
@@ -25,7 +25,7 @@
 - Python 3.12.11
 - uv 管理虚拟环境及依赖，提交 `uv.lock` 保证依赖版本可复现。
 - 基础依赖：FastAPI、Uvicorn、Psycopg（PostgreSQL 驱动）、concurrent-log-handler（协调日志文件写入）。
-- 数据库工程化：SQLAlchemy ORM、Alembic；ORM 基础、上传记录表、两个迁移及记录读写已实现。
+- 数据库工程化：SQLAlchemy ORM、Alembic；ORM 基础、上传记录表、两个迁移、记录读写与上传接口已实现。
 - 开发依赖：pytest、HTTPX、Ruff；后续按实际需要添加其他依赖。
 
 ```sh
@@ -42,7 +42,7 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-已有上传表迁移/约束与记录读写测试（46 个），使用真实 PG：`uv run --env-file .env pytest -q`。
+已有迁移、记录读写、文件保存与上传接口测试（65 个），使用真实 PG：`uv run --env-file .env pytest -q`。
 未提供数据库配置时测试会跳过；原 PDF 解析测试尚未重写。
 公开样本与已生成控制 PDF 保留在忽略的 `data/` 下；原生成脚本已删除。
 
@@ -51,26 +51,31 @@ uv run ruff format --check .
 在项目根目录启动服务：
 
 ```sh
-uv run uvicorn api.main:app --app-dir src --host 127.0.0.1 --port 8080
+make api            # 自动启动 PostgreSQL、升级结构并启动 Uvicorn（默认 8080）
+make api PORT=8000  # 换端口；Postman 环境的 url 须同步修改
 ```
 
-另开一个终端调用：
+等价的手工命令见 Makefile；另开一个终端调用：
 
 ```sh
 curl http://127.0.0.1:8080/health
+curl -F "files=@data/samples/pdf-controls/01-multilingual.pdf" \
+     -F "files=@data/samples/pdf-controls/02-repeated-images.pdf" \
+     http://127.0.0.1:8080/documents
 ```
 
 返回 HTTP 200 和 `{"status":"ok"}`，说明服务能够响应请求。
+上传命令返回 HTTP 201 和逐份结果 `succeeded`/`failed`/`documents`；一次最多 10 份、单份 20 MiB、单次总大小 100 MiB，见 [上传接口说明](docs/offline/api/02-document-upload.md)。
 浏览器打开 `http://127.0.0.1:8080/docs`，可以查看并试用接口；按 Ctrl+C 停止服务。
-这个检查尚不涉及数据库或 PDF 处理，范围见 [第一步接口说明](docs/offline/api/01-service-entry.md)。
 
 Postman 请求保存在 `postman/`，项目关联配置保存在 `.postman/`。
 在 Postman 的项目本地视图中选择 `local` 环境，再发送 `00-健康检查` 下的 `health` 请求。
+上传用 `01-上传文档` 下的 `upload` 请求：Body 选 form-data，字段名 `files`；需要多份时添加多行同名 `files`，每行选一个文件。
 环境变量 `url` 默认指向 `http://127.0.0.1:8080`；改端口时须与服务启动命令保持一致。
 
 ## 本地 PostgreSQL
 
-当前已实现驱动连接、ORM 基础、上传记录表、两个迁移及记录读写；本地文件保存和上传接口尚未实现。
+当前已实现驱动连接、ORM 基础、上传记录表、两个迁移、记录读写及上传接口；PDF 解析尚未实现。
 本机 `.env` 已创建且不提交 Git；其他机器首次使用时从 `.env.example` 复制配置。
 先启动 Docker Desktop，再在项目根目录运行：
 
@@ -95,14 +100,16 @@ ORM 检查输出 `ORM connection successful: modular_rag`，代码与事务用�
 
 ## 目录
 
-- `src/api/`：FastAPI 应用入口与 HTTP 路由；源码直接按功能组织。
+- `src/api/`：FastAPI 应用入口与上传路由。
 - `src/db/`：PostgreSQL 连接、ORM 基类、Session、上传记录模型与读写模块。
+- `src/uploads/`：本地文件保存（分段写入、校验和、大小限制与临时文件发布）。
 - `migrations/`：Alembic 迁移脚本；创建 `document_uploads` 表及升级空白约束。
 - `alembic.ini`：迁移工具配置；连接地址从环境变量读取，不写密码。
+- `Makefile`：常用命令快捷方式（`make api/db/migrate/test/lint`）。
 - `src/common/`：共用日志模块。
 - `src/check_database.py`：独立数据库连接检查入口。
 - `src/check_orm_database.py`：独立 ORM 连接检查入口。
-- `tests/`：ORM 基础、上传表迁移、约束及记录读写的真实 PG 验证；PDF 测试尚未重写。
+- `tests/`：迁移、约束、记录读写、文件保存与上传接口的真实 PG/磁盘验证；PDF 测试尚未重写。
 - `docs/offline/`：离线文档处理设计草案。
 - `docs/online/`：在线检索阶段边界，待详细设计。
 - `docs/evaluation/`：评测阶段边界，待详细设计。
