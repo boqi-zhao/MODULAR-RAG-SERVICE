@@ -5,8 +5,11 @@ description = "Modular RAG service with reproducible stage artifacts and evaluat
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "alembic>=1.20.0",
     "concurrent-log-handler>=0.9.29",
     "fastapi>=0.142.2",
+    "psycopg[binary]>=3.3.6",
+    "sqlalchemy>=2.1.3",
     "uvicorn[standard]>=0.54.0",
 ]
 

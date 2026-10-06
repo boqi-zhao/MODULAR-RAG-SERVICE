@@ -1,0 +1,24 @@
+# 本地开发只启动 PostgreSQL，应用继续通过 uv 在宿主机运行。
+name: modular-rag-service
+services:
+  postgres:
+    image: postgres:18.6-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?请先创建 .env}
+      POSTGRES_USER: ${POSTGRES_USER:?请先创建 .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请先创建 .env}
+    # 只向本机映射端口；数据卷独立于容器，重建容器仍保留数据。
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    # 等待数据库能够接收连接，避免容器启动时就提前执行验证。
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+# Compose 自动为数据卷加上项目名称，区分其他项目的数据。
+volumes:
+  postgres_data:
