@@ -19,6 +19,7 @@ from uploads.files import (
     save_pdf,
     storage_key,
 )
+from uploads.schemas import UploadFailed, UploadResult, UploadSucceeded
 
 
 # 普通 Python 输入，HTTP 上传或其他调用方都能提供文件流。
@@ -36,7 +37,7 @@ class BatchLimitExceeded(Exception):
 # 返回业务结果及数据库失败数，HTTP 状态码留给路由决定。
 @dataclass(frozen=True)
 class UploadBatchResult:
-    documents: list[dict]
+    documents: list[UploadResult]
     succeeded: int
     database_errors: int
 
@@ -76,11 +77,11 @@ def _file_error_message(error: Exception) -> str:
 def _process_file(
     file: UploadInput,
     session_factory: sessionmaker[Session],
-) -> tuple[dict, bool]:
+) -> tuple[UploadResult, bool]:
     filename = file.filename or ""
     if not filename.lower().endswith(".pdf"):
         detail = "首批只接收 PDF 文件，文件名需以 .pdf 结尾。"
-        return {"filename": filename, "status": "failed", "error": detail}, False
+        return UploadFailed(filename=filename, error=detail), False
 
     # 每份文件分配独立编号；一份失败不回滚其他已成功的文件或记录。
     document_id = f"doc_{uuid4().hex}"
@@ -96,7 +97,7 @@ def _process_file(
     # 初始记录创建失败时停止该份处理，避免产生无法追踪的文件。
     except SQLAlchemyError:
         logger.exception("创建上传记录失败 document_id=%s", document_id)
-        return {"filename": filename, "status": "failed", "error": _DATABASE_ERROR}, True
+        return UploadFailed(filename=filename, error=_DATABASE_ERROR), True
 
     try:
         saved = save_pdf(document_id, file.stream)
@@ -105,7 +106,7 @@ def _process_file(
         if not isinstance(error, (EmptyFile, NotPdf, FileTooLarge)):
             logger.exception("保存上传文件失败 document_id=%s", document_id)
         _mark_failed_quietly(document_id, detail, session_factory)
-        return {"filename": filename, "status": "failed", "error": detail}, False
+        return UploadFailed(filename=filename, error=detail), False
 
     try:
         finished = mark_uploaded(
@@ -117,21 +118,20 @@ def _process_file(
     except SQLAlchemyError:
         # 文件已保存但记录未更新：保留文件供排查，不报告该份上传成功。
         logger.exception("更新上传成功记录失败 document_id=%s", document_id)
-        return {"filename": filename, "status": "failed", "error": _DATABASE_ERROR}, True
+        return UploadFailed(filename=filename, error=_DATABASE_ERROR), True
     if not finished:
         logger.error("上传记录状态异常 document_id=%s", document_id)
         detail = "上传状态异常，请重试或联系管理员。"
-        return {"filename": filename, "status": "failed", "error": detail}, False
+        return UploadFailed(filename=filename, error=detail), False
 
     logger.info("上传完成 document_id=%s size=%s", document_id, saved.size_bytes)
-    item = {
-        "filename": filename,
-        "status": "uploaded",
-        "document_id": document_id,
-        "source_format": "pdf",
-        "size_bytes": saved.size_bytes,
-        "sha256": saved.sha256,
-    }
+    # 创建结果模型时校验字段，避免无效的成功结果流向调用方。
+    item = UploadSucceeded(
+        filename=filename,
+        document_id=document_id,
+        size_bytes=saved.size_bytes,
+        sha256=saved.sha256,
+    )
     return item, False
 
 
@@ -152,12 +152,12 @@ def upload_documents(
         raise BatchLimitExceeded("本次上传总大小超过限制。")
 
     # 每份独立处理；失败不会回滚其他已经完成的文件。
-    results: list[dict] = []
+    results: list[UploadResult] = []
     db_errors = 0
     for file in files:
         item, is_db_error = _process_file(file, session_factory)
         results.append(item)
         db_errors += int(is_db_error)
 
-    succeeded = sum(1 for item in results if item["status"] == "uploaded")
+    succeeded = sum(1 for item in results if item.status == "uploaded")
     return UploadBatchResult(results, succeeded, db_errors)

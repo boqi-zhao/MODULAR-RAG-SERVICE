@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from sqlalchemy.orm import Session, sessionmaker
 
+from uploads.schemas import UploadResponse
 from uploads.service import BatchLimitExceeded, UploadInput
 from uploads.service import upload_documents as upload_documents_service
 
@@ -19,14 +20,24 @@ def get_session_factory() -> sessionmaker[Session]:
     return SessionFactory
 
 
-@router.post("/documents", status_code=201, summary="上传一份或多份 PDF")
+# 成功与全失败使用同一批次模型，让接口文档展示每种响应的字段。
+@router.post(
+    "/documents",
+    status_code=201,
+    summary="上传一份或多份 PDF",
+    response_model=UploadResponse,
+    responses={
+        400: {"model": UploadResponse, "description": "全部上传失败"},
+        503: {"model": UploadResponse, "description": "全部失败且存在数据库错误"},
+    },
+)
 def upload_documents(
     files: Annotated[
         list[UploadFile], File(description="form-data 文件字段，字段名 files，可多行")
     ],
     session_factory: Annotated[sessionmaker[Session], Depends(get_session_factory)],
     response: Response,
-) -> dict[str, object]:
+) -> UploadResponse:
     """把 HTTP 文件转换为业务输入，再将业务结果映射为 HTTP 响应。"""
     # service 只接收普通数据和文件流，不接收 FastAPI 请求或响应对象。
     inputs = [UploadInput(file.filename or "", file.file, file.size) for file in files]
@@ -38,8 +49,8 @@ def upload_documents(
     # 保持现有契约：有成功项返回 201；全失败且有数据库错误返回 503，其余 400。
     if result.succeeded == 0:
         response.status_code = 503 if result.database_errors else 400
-    return {
-        "succeeded": result.succeeded,
-        "failed": result.failed,
-        "documents": result.documents,
-    }
+    return UploadResponse(
+        succeeded=result.succeeded,
+        failed=result.failed,
+        documents=result.documents,
+    )

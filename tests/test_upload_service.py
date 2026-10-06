@@ -24,10 +24,10 @@ def test_service_uploads_without_fastapi(upload_engine, tmp_path, monkeypatch):
     # 成功文件和 PG 记录都能核对；另一份失败不影响成功项。
     assert result.succeeded == 1 and result.failed == 1
     assert result.database_errors == 0
-    document_id = result.documents[0]["document_id"]
+    document_id = result.documents[0].document_id
     assert (tmp_path / document_id / "source.pdf").read_bytes() == payload
     assert get_upload(document_id, session_factory=factory).status == "uploaded"
-    assert result.documents[1]["status"] == "failed"
+    assert result.documents[1].status == "failed"
 
 
 # 批次超限在写入前拒绝；无需数据库或 FastAPI 即可判断。

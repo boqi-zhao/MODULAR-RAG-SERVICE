@@ -17,7 +17,7 @@
 - 新增依赖使用 uv add；开发依赖使用 uv add --dev。
 - 使用 uv run ruff check . 和 uv run ruff format --check . 验证代码。
 - 常用命令见 Makefile：make api（准备数据库并启动服务）、make db、make test、make lint。
-- 已有迁移、记录读写、文件保存与多份上传接口的真实 PG 测试（65 个），使用 uv run --env-file .env pytest；未加载数据库配置时会跳过，不能当作验证通过。
+- 已有迁移、记录读写、文件保存、多份上传接口与结果模型测试（72 个），使用 uv run --env-file .env pytest；未加载数据库配置时会跳过，不能当作验证通过。
 
 ## 任务跟踪与交接
 
@@ -62,6 +62,18 @@
 - 区分单阶段执行、下游重跑、失败恢复和强制重新执行。
 - 实验索引及评估应绑定明确版本，并保持隔离。
 - 文档、块、产物、执行及索引版本的身份规则需先定义，再实现存储。
+
+## Router、Service 与数据模型规范
+
+- 后续接口必须分开编写 router（路由）和 service（业务处理），不能把业务流程写进路由函数。
+- router 放在 `src/api/`，只负责接收请求、转换输入、注入依赖、调用 service、映射 HTTP 状态码和返回响应。
+- service 放在对应功能目录，例如 `src/uploads/service.py`；负责业务校验和流程编排，调用文件保存、数据库读写等模块。
+- service 不依赖 FastAPI 的请求、响应、`UploadFile` 或 `HTTPException`，应能直接通过 Python 调用；业务异常由 router 映射为 HTTP 响应。
+- 接口的结构化输入和输出必须使用 Pydantic 模型，放在对应功能目录的 `schemas.py`；service 的结构化结果也使用明确模型，不用无约束字典。
+- router 声明 `response_model`，使响应可校验且接口文档能展示字段；成功和失败结构不同的结果应分别定义模型。
+- 文件上传仍由 `UploadFile` 接收，再转换为普通文件流输入；文件流、数据库 Session 和内部控制对象不强制包装为 Pydantic 模型。
+- Pydantic 是直接依赖；数据库 ORM 模型仍由 SQLAlchemy 定义，不与接口数据模型混用。
+- 当前示例见 `src/api/documents.py`、`src/uploads/service.py` 和 `src/uploads/schemas.py`；开发流程见 [分步开发与讲解流程](docs/offline/01-development-flow.md)。
 
 ## 参考项目
 

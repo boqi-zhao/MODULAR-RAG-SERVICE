@@ -24,7 +24,7 @@
 
 - Python 3.12.11
 - uv 管理虚拟环境及依赖，提交 `uv.lock` 保证依赖版本可复现。
-- 基础依赖：FastAPI、Uvicorn、Psycopg（PostgreSQL 驱动）、concurrent-log-handler（协调日志文件写入）。
+- 基础依赖：FastAPI、Pydantic（结构化数据校验）、Uvicorn、Psycopg（PostgreSQL 驱动）、concurrent-log-handler（协调日志文件写入）。
 - 数据库工程化：SQLAlchemy ORM、Alembic；ORM 基础、上传记录表、两个迁移、记录读写与上传接口已实现。
 - 开发依赖：pytest、HTTPX、Ruff；后续按实际需要添加其他依赖。
 
@@ -42,7 +42,7 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-已有迁移、记录读写、文件保存与上传接口测试（65 个），使用真实 PG：`uv run --env-file .env pytest -q`。
+已有迁移、记录读写、文件保存、上传接口及结果模型测试（72 个），使用真实 PG：`uv run --env-file .env pytest -q`。
 未提供数据库配置时测试会跳过；原 PDF 解析测试尚未重写。
 公开样本与已生成控制 PDF 保留在忽略的 `data/` 下；原生成脚本已删除。
 
@@ -102,7 +102,7 @@ ORM 检查输出 `ORM connection successful: modular_rag`，代码与事务用�
 
 - `src/api/`：FastAPI 应用入口与上传路由。
 - `src/db/`：PostgreSQL 连接、ORM 基类、Session、上传记录模型与读写模块。
-- `src/uploads/`：`service.py` 编排上传业务；`files.py` 负责本地文件保存与校验。
+- `src/uploads/`：`service.py` 编排上传业务；`files.py` 保存文件；`schemas.py` 定义 Pydantic 结果模型。
 - `migrations/`：Alembic 迁移脚本；创建 `document_uploads` 表及升级空白约束。
 - `alembic.ini`：迁移工具配置；连接地址从环境变量读取，不写密码。
 - `Makefile`：常用命令快捷方式（`make api/db/migrate/test/lint`）。

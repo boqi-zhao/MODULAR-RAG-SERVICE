@@ -86,6 +86,17 @@
 service 接收 `UploadInput`（文件名、文件流、大小），返回 `UploadBatchResult`；整批超限抛出业务异常，由路由映射为 413。
 `src/uploads/files.py` 负责本地文件保存，`src/db/upload_records.py` 负责数据库读写。
 
+## 上传结果模型
+
+Pydantic 已列为直接依赖；模型在 `src/uploads/schemas.py`，不依赖 FastAPI。
+- `UploadSucceeded`：成功必须有文档编号、正数大小、64 位 SHA-256；状态固定为 `uploaded`。
+- `UploadFailed`：失败必须有原因，状态固定为 `failed`，不允许混入成功字段。
+- `UploadResponse`：批次成功数、失败数与逐份结果；按 `status` 区分成功和失败模型。
+
+模型拒绝多余字段和隐式类型转换；service 创建结果时即校验，路由使用 `response_model` 校验响应并生成接口文档。
+上传仍用 multipart 的 `files` 字段；文件流输入保留 `UploadInput`，不转换为 JSON 模型。
+原 HTTP 状态码和 JSON 字段保持一致；`/docs` 已展示 201、400、503 的明确响应结构。
+
 ## TODO：存储桶
 
 后续实现对象存储（如 OSS/S3）适配：业务通过存储模块保存和读取文件，不直接依赖本地路径。
