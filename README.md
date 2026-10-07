@@ -2,7 +2,7 @@
 
 新建的独立 RAG 服务项目，计划采用 FastAPI，并支持阶段产物落盘、子阶段独立重跑和版本化测评。
 
-首个 MVP 已实现 MarkItDown 文字、PyMuPDF 图片和 `[IMAGE: 图片ID]`，代码待用户 review；入口、调用与范围见 [PDF 解析](docs/offline/02-pdf-parse.md)。文字、图片和 JSON 快照已落盘；正式版本产物、复用和 Runner 尚未实现。
+首个 MVP 已实现 MarkItDown 文字、PyMuPDF 图片和 `[IMAGE: 图片ID]`，用户代码评审已通过；入口、调用与范围见 [PDF 解析](docs/offline/02-pdf-parse.md)。文字、图片和 JSON 快照已落盘；正式版本产物、复用和 Runner 尚未实现。
 当前已实现 `GET /health` 与 `POST /documents` 上传接口（本地保存原文件 + PostgreSQL 上传记录）；PDF 解析接口尚未实现。
 
 开发接手请先阅读 [协作约定](AGENTS.md) 和 [任务进度与下一步](TASKS.md)，再查看相关设计与代码。
@@ -10,7 +10,7 @@
 文档按主题阅读：[离线入口](docs/offline/README.md) / [在线边界](docs/online/README.md) / [评测边界](docs/evaluation/README.md)，术语见 [GLOSSARY.md](GLOSSARY.md)。
 每个 Stage 落盘、可追溯、可复用，以及调整策略后从指定阶段重跑，是已确认要求；具体存储与执行仍分批评审。
 MVP 优先沿用旧业务策略，精准定位、OCR 和复杂结构后置；每次选型/调优的详细记录见 [decisions](docs/decisions/README.md)。
-当前先整理文档并 review 解析，chunk 暂缓；后续并发、索引和格式规划按需查看 [后续范围](docs/offline/05-future-scope.md)。
+独立解析与快照已评审通过，下一步等待用户指定；chunk 暂缓，后续并发、索引和格式规划按需查看 [后续范围](docs/offline/05-future-scope.md)。
 
 ## 开发环境
 

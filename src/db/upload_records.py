@@ -1,6 +1,6 @@
 """上传记录读写：短事务写入 uploading 记录，条件更新结束上传。
 
-调用顺序由 docs/offline/api/03-upload-records.md 规定：
+调用顺序由 docs/offline/01-upload.md 规定：
 创建 uploading → 保存文件 → 标记 uploaded 或 failed。
 每个函数自己开、关 Session，上传期间不长时间占用数据库连接。
 """

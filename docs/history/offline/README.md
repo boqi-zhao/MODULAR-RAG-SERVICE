@@ -10,4 +10,4 @@
 
 2026-10-07 文档整理前共有 50 份 Markdown、2258 行；原文已完整备份到本机 `data/history/offline-docs-20261007-155755/before.tar.gz`，附 inventory.json 摘要清单。
 备份含未提交文档，不随 Git 克隆；这里的摘要和样本清单供跨机器追溯，Git 另保留已提交历史。
-本次仅提交重排后的文档，解析代码仍在工作区。调优/产物的有效约束已合并至当前 [产物](../../offline/03-stage-artifacts.md) 与 [执行](../../offline/04-execution.md) 文档，不作为废弃内容归档。
+重排文档已提交为 `66ab6d2`；解析实现的评审/提交状态见 [TASKS.md](../../../TASKS.md)。调优/产物的有效约束已合并至当前 [产物](../../offline/03-stage-artifacts.md) 与 [执行](../../offline/04-execution.md) 文档，不作为废弃内容归档。

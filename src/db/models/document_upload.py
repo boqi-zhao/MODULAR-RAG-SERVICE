@@ -1,4 +1,4 @@
-"""上传记录表 ORM 模型；字段与约束依据 docs/offline/api/06-upload-table.md。"""
+"""上传记录表 ORM 模型；字段与约束依据 docs/offline/01-upload.md。"""
 
 from datetime import datetime
 

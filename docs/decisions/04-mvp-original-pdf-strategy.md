@@ -1,7 +1,7 @@
 # 首个 MVP 沿用旧项目解析方案
 
 日期：2026-10-07。任务：T-11。类型：策略调整 / MVP 范围收敛。
-状态：用户已明确决定并授权重写；独立解析与工作目录快照已实现、验证，代码待评审，未提交；正式 Stage 版本存储尚未完成。
+状态：用户已明确决定并授权重写；独立解析与工作目录快照已实现、验证，2026-10-07 用户代码评审通过并授权提交；正式 Stage 版本存储尚未完成，提交状态见 [TASKS.md](../../TASKS.md)。
 
 首个 MVP 优先完成原有业务流程，尽量不改旧项目方案。
 PDF 使用 MarkItDown 提取文字，沿用 PyMuPDF 的资源图片提取与保存，并追加 `[IMAGE: 图片ID]`。
@@ -25,7 +25,7 @@ PDF 使用 MarkItDown 提取文字，沿用 PyMuPDF 的资源图片提取与保�
 旧 position 字段是尺寸、页码和序号，没有页面 bbox；不把它解释为精准定位。
 MarkItDown 的转换结果直接保留，不承诺自动获得正确标题层级、表格或复杂版面。
 
-新项目现已移除此前 blocks/dict 图文、出现匹配和 PNG 转换，统一 parse_pdf 入口及旧 id/text/metadata 结构；模型与实际调用见 [08 实现说明](../offline/02-pdf-parse.md)。
+新项目现已移除此前 blocks/dict 图文、出现匹配和 PNG 转换，统一 parse_pdf 入口及旧 id/text/metadata 结构；模型与实际调用见 [02 PDF 解析](../offline/02-pdf-parse.md)。
 
 ## 2. 取舍与约束
 

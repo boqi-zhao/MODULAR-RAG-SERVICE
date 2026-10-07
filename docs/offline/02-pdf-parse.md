@@ -1,7 +1,7 @@
 # PDF 解析：当前 MVP
 
 用户决定沿用旧项目基线：MarkItDown 提取文字，PyMuPDF 保存资源图片，使用 `[IMAGE: 图片ID]`。
-独立解析与磁盘快照已实现、验证；代码待用户评审，未提交。选型过程见 [决策 04](../decisions/04-mvp-original-pdf-strategy.md)。
+独立解析与磁盘快照已实现、验证；2026-10-07 用户代码评审通过，本次连同依赖、脚本和测试提交。选型过程见 [决策 04](../decisions/04-mvp-original-pdf-strategy.md)。
 
 ## 先看入口
 
