@@ -19,7 +19,7 @@ from uploads.files import (
     save_pdf,
     storage_key,
 )
-from uploads.schemas import UploadFailed, UploadResult, UploadSucceeded
+from uploads.schemas import UploadBatchResult, UploadFailed, UploadResult, UploadSucceeded
 
 
 # 普通 Python 输入，HTTP 上传或其他调用方都能提供文件流。
@@ -32,18 +32,6 @@ class UploadInput:
 
 class BatchLimitExceeded(Exception):
     """整批上传超过限制；由调用方决定如何向用户展示。"""
-
-
-# 返回业务结果及数据库失败数，HTTP 状态码留给路由决定。
-@dataclass(frozen=True)
-class UploadBatchResult:
-    documents: list[UploadResult]
-    succeeded: int
-    database_errors: int
-
-    @property
-    def failed(self) -> int:
-        return len(self.documents) - self.succeeded
 
 
 # 数据库失败提示不暴露连接信息。
@@ -160,4 +148,5 @@ def upload_documents(
         db_errors += int(is_db_error)
 
     succeeded = sum(1 for item in results if item.status == "uploaded")
-    return UploadBatchResult(results, succeeded, db_errors)
+    # 返回前由模型核对逐项结构和汇总计数，HTTP 映射仍由 router 完成。
+    return UploadBatchResult(documents=results, succeeded=succeeded, database_errors=db_errors)

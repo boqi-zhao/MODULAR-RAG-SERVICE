@@ -10,6 +10,7 @@ def test_service_uploads_without_fastapi(upload_engine, tmp_path, monkeypatch):
     from sqlalchemy.orm import sessionmaker
 
     from db.upload_records import get_upload
+    from uploads.schemas import UploadBatchResult
     from uploads.service import UploadInput, upload_documents
 
     factory = sessionmaker(bind=upload_engine)
@@ -22,6 +23,7 @@ def test_service_uploads_without_fastapi(upload_engine, tmp_path, monkeypatch):
     result = upload_documents(files, factory)
 
     # 成功文件和 PG 记录都能核对；另一份失败不影响成功项。
+    assert isinstance(result, UploadBatchResult)
     assert result.succeeded == 1 and result.failed == 1
     assert result.database_errors == 0
     document_id = result.documents[0].document_id
